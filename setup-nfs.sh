@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 ###########################
-# Written by: Yair Kochavi
+# Written by: yair Kocahvi
 # Date: 27/07/2025
-# Purpose: A setup script to install NFS.
-# Version: 0.0.2
+# Purpose: A   and mount nfs
+# Version: 0.0.1
 ###########################
 
 LOGFILE=/var/log/nfs-setup.log
@@ -11,7 +11,6 @@ NFSFILE=/srv/nfs/shared
 NULL=/dev/null
 EXPFILE=/etc/exports
 library=./lib/negbook.sh
-
 mkdir -p ./lib
 if [[ ! -f "$library" ]]; then
     curl -s -o "$library" https://raw.githubusercontent.com/ronthesoul/negbook/main/negbook.sh
@@ -50,8 +49,8 @@ main() {
 
     start_task "Exporting NFS share"
     if ! grep -q "$NFSFILE" "$EXPFILE"; then
-        echo "$NFSFILE *(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a "$EXPFILE" > "$NULL"
-    fi
+     echo "$NFSFILE *(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a "$EXPFILE" > "$NULL"
+    fi   
     sudo exportfs -rav >> "$LOGFILE" 2>&1
     logv2 success "Exported $NFSFILE to /etc/exports"
 
