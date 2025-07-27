@@ -1,3 +1,4 @@
+
 # Voltask
 
 A K3s example project to demonstrate using an NFS-backed PersistentVolume with a multi-replica deployment.
@@ -24,32 +25,56 @@ voltask/
 
 ## 🧾 Project Goal
 
-Create a deployment (`details_app`) that uses an NFS-based PersistentVolume with the following:
+Deploy an NGINX-based app (`details_app`) using an NFS-based PersistentVolume with:
 
-- Uses an `nginx` container
-- Mounted to `/usr/share/nginx/html`
-- Shared volume created via NFS
-- Two replicas in deployment
-- Test persistence by deleting one pod and confirming recovery with data intact
+- Two replicas
+- Shared mount at `/usr/share/nginx/html`
+- Persistent data backed by an external NFS server
+- Recovery validation by deleting one pod
+
+---
+
+## ⚠️ Prerequisites
+
+Before applying the manifests:
+
+- You must have a working K3s cluster (`kubectl` configured).
+- NFS server must be reachable by all nodes in the cluster.
+- Update the NFS server IP in `pv.yaml`:
+
+```yaml
+spec:
+  nfs:
+    server: 192.168.1.100  # ← replace with your NFS server IP
+    path: /srv/nfs/shared
+```
+
+To find and replace all hardcoded IPs:
+
+```bash
+grep -rn "192.168" .
+```
 
 ---
 
 ## 🚀 K3s Deployment
 
-### 1. Apply K3s Resources
+### Step 1: Apply Resources
 
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-This script will:
+This will:
 
-- Create a namespace called `voltask`
-- Apply the NFS-based PV and PVC
-- Deploy the nginx app with 2 replicas
+- Create a `voltask` namespace
+- Apply the PersistentVolume and PersistentVolumeClaim
+- Deploy an NGINX app with 2 replicas using the shared NFS volume
 
-### 2. Validate
+### Step 2: Validate
+
+Check resources:
 
 ```bash
 kubectl get pods -n voltask
@@ -57,51 +82,61 @@ kubectl get pvc -n voltask
 kubectl describe pod <pod-name> -n voltask
 ```
 
-Delete a pod and verify data persists:
+Delete one pod to validate volume persistence:
 
 ```bash
-kubectl delete pod <one-pod-name> -n voltask
+kubectl delete pod <pod-name> -n voltask
 ```
+
+Then reload the new pod and verify data remains intact.
 
 ---
 
-## 🧱 NFS Server Setup (K3s Compatible)
+## 🧱 NFS Server Setup
 
-Use the provided script to configure an NFS server on your K3s host or a reachable node:
+Use the provided script to install and configure NFS on a host or VM:
 
-### 1. Run NFS setup
+### Step 1: Run setup script
 
 ```bash
 chmod +x setup-nfs.sh
 sudo ./setup-nfs.sh
 ```
 
-This will:
+This script will:
 
-- Install `nfs-kernel-server` (if needed)
-- Create the directory `/srv/nfs/shared`
-- Add an `index.html` to test access
-- Export the share to all clients
+- Install `nfs-kernel-server` if missing
+- Create `/srv/nfs/shared`
+- Write a test `index.html` file
+- Add export rules to `/etc/exports`
 - Restart the NFS service
 
-Make sure your K3s nodes can access the NFS server via the same network.
+Make sure your cluster nodes can reach this server (check firewall/NAT if needed).
 
 ---
 
 ## 🔒 Notes
 
-- You may need to modify `pv.yaml` with your actual NFS server IP and export path.
-- This example uses `ReadWriteMany`, which requires an NFS or similar shared backend.
-- K3s supports NFS natively when using appropriate mount options.
+- The setup uses `ReadWriteMany` which is supported by NFS.
+- Pods can write to the same volume concurrently.
+- You must configure the correct IP and path in your PersistentVolume definition.
 
 ---
 
-## ✅ Done!
+## ✅ You Now Have
 
-You now have:
+- A working multi-replica K3s deployment using shared storage
+- Verified pod rescheduling and data persistence
+- A reusable script for NFS server provisioning
 
-- A working K3s Deployment using NFS
-- Pod recovery with persistent shared storage
-- Scripts to install both NFS and workload resources
+---
 
-Want to extend this with monitoring or turn it into a Helm chart? Just ask.
+## 🧩 Want to Extend?
+
+Ideas for next steps:
+
+- Turn this into a Helm chart
+- Add monitoring with Prometheus + Grafana
+- Integrate into CI/CD (GitHub Actions, ArgoCD, Flux)
+
+Need help? Open an issue or contact me.
