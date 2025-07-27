@@ -1,0 +1,36 @@
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Backup/swap/temp
+*~
+*.swp
+*.bak
+*.tmp
+
+# Environment and secrets
+.env
+*.secret
+secrets/
+
+# Kube configs or generated files
+.kube/
+*.kubeconfig
+*.yaml.bak
+*.yaml.old
+
+# Helm artifacts (if using)
+charts/
+*.tgz
+
+# Local scripts or tools
+lib/
+*.out
+*.sh~
+
+# Ignore everything in manifests except YAMLs
+manifests/*
+!manifests/*.yaml
