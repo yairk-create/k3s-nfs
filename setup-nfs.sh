@@ -1,66 +1,91 @@
 #!/usr/bin/env bash
 ###########################
-# Written by: yair Kocahvi
+# Written by: Yair Kochavi
 # Date: 27/07/2025
-# Purpose: A   and mount nfs
-# Version: 0.0.1
+# Purpose: Install and mount NFS
+# Version: 0.0.3
 ###########################
 
 LOGFILE=/var/log/nfs-setup.log
-NFSFILE=/srv/nfs/shared
+NFSDIR=/mnt/tank/k3s-data
 NULL=/dev/null
-EXPFILE=/etc/exports
-library=./lib/negbook.sh
-mkdir -p ./lib
-if [[ ! -f "$library" ]]; then
-    curl -s -o "$library" https://raw.githubusercontent.com/ronthesoul/negbook/main/negbook.sh
-fi
-source "$library"
+EXPXONF=/etc/exports
+
+# --- Logging functions ---
+log() {
+    level="$1"
+    shift
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $*" | tee -a "$LOGFILE"
+}
+
+info()    { log INFO "$@"; }
+success() { log SUCCESS "$@"; }
+warn()    { log WARN "$@"; }
+error()   { log ERROR "$@"; }
+task()    { echo -e "\n==> $*" | tee -a "$LOGFILE"; }
+
+# --- Root check ---
+check_root() {
+    [[ "$EUID" -eq 0 ]]
+}
 
 main() {
-    title "📦 NFS Installation Script"
+    echo "📦 Starting NFS Installation Script"
+    info "Script started"
+    info "Logging to $LOGFILE"
 
-    logv2 info "Script started"
-    logv2 info "Log file: $LOGFILE"
-
-    start_task "Checking for root privileges"
+    task "Checking for root privileges"
     if ! check_root; then
-        fail_task "Root check"
-        logv2 error "Root check failed"
+        error "Must be run as root"
         exit 1
     fi
-    logv2 success "Root privileges confirmed"
+    success "Root privileges confirmed"
 
-    start_task "Installing nfs-kernel-server"
-    if distro_check_and_install nfs-kernel-server > "$NULL" 2>&1; then
-        logv2 success "NFS server was successfully installed"
+    task "Checking if script is run with sudo"
+    if [[ -z "$SUDO_USER" ]]; then
+        error "Please run the script using sudo, not as root directly."
+        exit 1
+    fi
+    success "Running with sudo as $SUDO_USER"
+
+    task "Checking if system is Debian"
+    if ! grep -qi "debian" /etc/os-release; then
+        error "This script is designed for Debian-based systems only."
+        exit 1
+    fi
+    success "Debian system confirmed"
+
+    task "Installing nfs-kernel-server"
+    if apt-get update >> "$LOGFILE" 2>&1 && apt-get install -y nfs-kernel-server >> "$LOGFILE" 2>&1; then
+        success "NFS server installed successfully"
     else
-        logv2 error "NFS server installation failed"
+        error "Failed to install NFS server"
         exit 1
     fi
 
-    start_task "Creating shared directory at $NFSFILE"
+    task "Creating shared directory at $NFSFILE"
     mkdir -p "$NFSFILE"
-    logv2 success "Created directory at $NFSFILE"
+    success "Directory created at $NFSFILE"
 
-    start_task "Creating index.html file"
+    task "Creating index.html file"
     echo "NFS StorageClass To Container" > "$NFSFILE/index.html"
-    logv2 success "index.html created at $NFSFILE"
+    success "index.html created"
 
-    start_task "Exporting NFS share"
+    task "Exporting NFS share"
     if ! grep -q "$NFSFILE" "$EXPFILE"; then
-     echo "$NFSFILE *(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a "$EXPFILE" > "$NULL"
-    fi   
-    sudo exportfs -rav >> "$LOGFILE" 2>&1
-    logv2 success "Exported $NFSFILE to /etc/exports"
+        echo "$NFSFILE *(rw,sync,no_subtree_check,no_root_squash)" >> "$EXPFILE"
+        success "Added export to $EXPFILE"
+    else
+        info "Export already exists in $EXPFILE"
+    fi
+    exportfs -rav >> "$LOGFILE" 2>&1
+    success "Exports refreshed"
 
-    start_task "Restarting nfs-kernel-server"
-    sudo systemctl restart nfs-kernel-server >> "$LOGFILE" 2>&1
-    logv2 success "NFS service restarted"
+    task "Restarting nfs-kernel-server"
+    systemctl restart nfs-kernel-server >> "$LOGFILE" 2>&1
+    success "NFS service restarted"
 
-    logv2 success "✅ NFS setup complete!"
+    success "✅ NFS setup complete!"
 }
 
 main "$@"
-rm -rf "$library"
-rmdir ./lib 2>"$NULL"
