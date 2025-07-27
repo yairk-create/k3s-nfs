@@ -129,14 +129,3 @@ Make sure your cluster nodes can reach this server (check firewall/NAT if needed
 - Verified pod rescheduling and data persistence
 - A reusable script for NFS server provisioning
 
----
-
-## 🧩 Want to Extend?
-
-Ideas for next steps:
-
-- Turn this into a Helm chart
-- Add monitoring with Prometheus + Grafana
-- Integrate into CI/CD (GitHub Actions, ArgoCD, Flux)
-
-Need help? Open an issue or contact me.
