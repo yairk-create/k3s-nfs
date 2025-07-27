@@ -1,20 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
-NAMESPACE="voltask"
+echo "🚀 Deploying manifests to K3s cluster..."
 
-echo "🔧 Creating namespace: $NAMESPACE"
-kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+for file in manifests/*.yaml; do
+    echo "→ Applying $file"
+    kubectl apply -f "$file"
+done
 
-echo "📦 Applying PersistentVolume..."
-kubectl apply -f pv.yaml
-
-echo "📦 Applying PersistentVolumeClaim..."
-kubectl apply -f pvc.yaml -n "$NAMESPACE"
-
-echo "🚀 Deploying application..."
-kubectl apply -f deployment.yaml -n "$NAMESPACE"
-
-echo "✅ Done. Use the following to check the status:"
-echo "   kubectl get all -n $NAMESPACE"
+echo "✅ All manifests deployed successfully!"
