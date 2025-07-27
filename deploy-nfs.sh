@@ -2,7 +2,11 @@
 ###########################
 # Written by: Yair Kochavi
 # Date: 27/07/2025
-# Purpose: Install and mount NFS
+# Purpose: Install deploymetn and mount NFS share for k3s
+# License: MIT
+# Usage: sudo ./deploy-nfs.sh
+# Dependencies: nfs-kernel-server
+# Requirements: Debian-based system
 # Version: 0.0.3
 ###########################
 
