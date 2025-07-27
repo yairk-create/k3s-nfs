@@ -123,9 +123,3 @@ Make sure your cluster nodes can reach this server (check firewall/NAT if needed
 
 ---
 
-## ✅ You Now Have
-
-- A working multi-replica K3s deployment using shared storage
-- Verified pod rescheduling and data persistence
-- A reusable script for NFS server provisioning
-
